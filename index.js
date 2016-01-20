@@ -4,7 +4,7 @@ const path = require('path')
 const app = require('koa')()
 app.keys = [process.env.SECRET_HURR]
 const router = require('koa-router')()
-const koaBody = require('koa-body')()
+const koaBody = require('koa-body')
 const session = require('koa-session')
 const redis = require('redis').createClient(process.env.REDIS_URL || 6379)
 const ChromeWebstoreManager = require('chrome-webstore-manager')
@@ -26,7 +26,7 @@ router.get('/', function *(next) {
 })
 
 // Receive Webhook from GitHub
-router.post('/webhook', koaBody, function *(next) {
+router.post('/webhook', koaBody(), function *(next) {
   if (this.headers['x-github-event'] !== 'pull_request') return this.body = ''
   const reqJSON = this.request.body
   this.body = webhook(reqJSON, this.request.origin)
@@ -52,10 +52,9 @@ router.get('/callback', function *(next) {
 })
 
 // Receive Zip from CI
-router.post('/release/:issueNumber', koaBody, function *(next) {
+router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next) {
   const koa = this
-  const extZipBinData = this.request.body
-  const extZipPath = path.resolve(__dirname, 'extension.zip')
+  const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
   this.body = yield new Promise((resolve) => {
     redis.get(`token_${this.params.issueNumber}`, function (err, value) {
       chromeWebstoreManager.updateItem(value, extZipBinData, itemId)
