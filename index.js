@@ -31,19 +31,19 @@ router.post('/webhook', koaBody, function *(next) {
 })
 
 router.get('/prepare-release/:issueNumber', function *(next) {
-  const callbackUrl = `${this.request.origin}/callback/${this.params.issueNumber}`
-  this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl))
+  const callbackUrl = `${this.request.origin}/callback`
+  this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl, this.params.issueNumber))
 })
 
-router.get('/callback/:issueNumber', function *(next) {
+router.get('/callback', function *(next) {
   const query = {}
   this.request.querystring.split('&').forEach((q) => {
     const tmp = q.split('=')
     query[tmp[0]] = tmp[1]
   })
-  const callbackUrl = `${this.request.origin}/callback/${this.params.issueNumber}`
+  const callbackUrl = `${this.request.origin}/callback`
   this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
-    redis.set(`token_${this.params.issueNumber}`, data.access_token)
+    redis.set(`token_${query['state']}`, data.access_token)
     return 'Success to prepare your release. This item will be released as soon as merged.'
   })
 })

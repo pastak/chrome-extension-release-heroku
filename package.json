@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/pastak/github-webhook-chrome-extension-release#readme",
   "dependencies": {
-    "chrome-webstore-manager": "^0.2.8",
+    "chrome-webstore-manager": "^0.2.9",
     "github": "^0.2.4",
     "koa": "^1.1.2",
     "koa-body": "^1.4.0",
