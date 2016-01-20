@@ -26,7 +26,7 @@ router.get('/', function *(next) {
 // Receive Webhook from GitHub
 router.post('/webhook', koaBody, function *(next) {
   if (this.headers['x-github-event'] !== 'pull_request') return this.body = ''
-  const reqJSON = JSON.parse(this.request.body)
+  const reqJSON = this.request.body
   this.body = webhook(reqJSON, this.request.origin)
 })
 
