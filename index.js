@@ -2,8 +2,10 @@
 const fs = require('fs')
 const path = require('path')
 const app = require('koa')()
+app.keys = [process.env.SECRET_HURR]
 const router = require('koa-router')()
 const koaBody = require('koa-body')()
+const session = require('koa-session')
 const redis = require('redis').createClient(process.env.REDIS_URL || 6379)
 const ChromeWebstoreManager = require('chrome-webstore-manager')
 const itemId = process.env.ITEM_ID
@@ -32,7 +34,8 @@ router.post('/webhook', koaBody, function *(next) {
 
 router.get('/prepare-release/:issueNumber', function *(next) {
   const callbackUrl = `${this.request.origin}/callback`
-  this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl, this.params.issueNumber))
+  this.session.number = this.params.issueNumber
+  this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl))
 })
 
 router.get('/callback', function *(next) {
@@ -43,7 +46,7 @@ router.get('/callback', function *(next) {
   })
   const callbackUrl = `${this.request.origin}/callback`
   this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
-    redis.set(`token_${query['state']}`, data.access_token)
+    redis.set(`token_${this.session.number}`, data.access_token)
     return 'Success to prepare your release. This item will be released as soon as merged.'
   })
 })
@@ -72,6 +75,7 @@ router.post('/release/:issueNumber', koaBody, function *(next) {
 })
 
 app.use(router.routes())
+app.use(session(app))
 const port = process.env.PORT || 3000
 app.listen(port, () => {
   console.log(`listening on port ${port}`)

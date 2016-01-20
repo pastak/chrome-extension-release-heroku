@@ -13,3 +13,4 @@ TBD
 - `RELEASE_BRANCH`: Your flow's release branch name
   - Default: `production`
 - `GITHUB_TOKEN`: Your GitHub Token
+- `SECRET_HURR`: Secret for cookie sign
