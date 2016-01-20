@@ -1,0 +1,27 @@
+{
+  "name": "github-webhook-chrome-extension-release",
+  "version": "0.0.1",
+  "description": "TBD",
+  "scripts": {
+    "start": "node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/pastak/github-webhook-chrome-extension-release.git"
+  },
+  "author": "pastak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pastak/github-webhook-chrome-extension-release/issues"
+  },
+  "homepage": "https://github.com/pastak/github-webhook-chrome-extension-release#readme",
+  "dependencies": {
+    "chrome-webstore-manager": "^0.2.8",
+    "github": "^0.2.4",
+    "koa": "^1.1.2",
+    "koa-body": "^1.4.0",
+    "koa-router": "^5.3.0",
+    "redis": "^2.4.2"
+  }
+}
