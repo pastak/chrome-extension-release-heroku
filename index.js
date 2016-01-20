@@ -19,6 +19,7 @@ router.get('/', function *(next) {
   <a href='https://chrome.google.com/webstore/detail/${itemId}'>This item's webstore page</a>.`
 })
 
+// Receive Webhook from GitHub
 router.post('/webhook', koaBody, function *(next) {
   if (this.request.headers['X-Github-Event'] !== 'pull_request') return this.body = ''
   const reqJSON = JSON.parse(this.request.body)
@@ -43,6 +44,7 @@ router.get('/callback/:issueNumber', function *(next) {
   })
 })
 
+// Receive Zip from CI
 router.post('/release/:issueNumber', koaBody, function *(next) {
   const koa = this
   const extZipBinData = this.request.body
