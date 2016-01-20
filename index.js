@@ -16,7 +16,11 @@ const chromeWebstoreManager = new ChromeWebstoreManager(clientId, clientSecret)
 router.get('/', function *(next) {
   this.type = 'text/html'
   this.body = `This app is receive webhook from github to release chrome webstore<br />
-  <a href='https://chrome.google.com/webstore/detail/${itemId}'>This item's webstore page</a>.`
+  <a href='https://chrome.google.com/webstore/detail/${itemId}'>This item's webstore page</a>.
+  <br />
+  <br />
+  Webhook URL<input readonly='readonly' type='text' style='width: 800px' value='${this.request.origin}/webhook' onClick='this.select()'/>
+  `
 })
 
 // Receive Webhook from GitHub
