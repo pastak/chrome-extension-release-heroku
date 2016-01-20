@@ -7,4 +7,5 @@ const github = require('./github')
 module.exports = function (webhook, host) {
   if (!(webhook.action === 'opened' && webhook.pull_request.base.ref === releaseTargetBranch)) return ''
   github.commentRelaseUrl(webhook, host)
+  return 'pr opened'
 }
