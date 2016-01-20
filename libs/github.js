@@ -14,7 +14,7 @@ module.exports = {
         type: 'oauth',
         token: githubToken
     })
-    const repoPath = webhook.repository.full_name('/')
+    const repoPath = webhook.repository.full_name.split('/')
     github.issue.createComment({
       headers: {
         'User-Agent': 'pastak/chrome-extension-release-heroku'
