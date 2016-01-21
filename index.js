@@ -47,7 +47,7 @@ router.get('/callback', function *(next) {
   const callbackUrl = `${this.request.origin}/callback`
   this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
     redis.set(`token_${this.session.number}`, data.access_token, () => {})
-    return 'Success to prepare your release. This item will be released as soon as merged.TOKEN is '+ data.access_token
+    return 'Success to prepare your release. This item will be released as soon as merged.TOKEN is '+ data
   })
 })
 
