@@ -1,5 +1,5 @@
 {
-  "name": "chrome-extension-release-heroku",
+  "name": "chrome-extension-release",
   "description": "Support release for Chrome WebStore with GitHub webhook and CIs",
   "website": "https://github.com/pastak/chrome-extension-release-heroku",
   "repository": "https://github.com/pastak/chrome-extension-release-heroku",
