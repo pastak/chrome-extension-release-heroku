@@ -20,7 +20,7 @@ router.get('/', function *(next) {
 router.get('/initialize', function *(next) {
   try {
     fs.readFileSync('./token.json')
-    this.body = 'You have authorized. If you want to reset token please POST /delete_token'
+    this.response.redirect('/')
   } catch (e) {
     const callbackUrl = `${this.request.origin}/callback`
     this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl))

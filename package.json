@@ -4,7 +4,7 @@
   "description": "TBD",
   "scripts": {
     "run_dev": "node .",
-    "start": "forever start node .",
+    "start": "forever start .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

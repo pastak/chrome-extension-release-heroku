@@ -5,7 +5,7 @@
 - Deploy this app to your heroku by [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 - Set environment values
   - Detail is written on [here](https://github.com/pastak/chrome-extension-release-heroku#require-environment-values)
-- Login with your item's owner account to authorize.
+- Accress to `YOUR_HEROKU_APP_HOST/initialize` and login with your item's owner account to authorize.
 - Set your CI config that it pushes extension zip file to `POST YOUR_HEROKU_APP_HOST/release`
   - sample setting is [here](https://github.com/pastak/chrome-extension-release-heroku#ci-sample-settings)
 
