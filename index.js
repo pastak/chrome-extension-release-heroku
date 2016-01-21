@@ -54,6 +54,11 @@ router.get('/callback', function *(next) {
 // Receive Zip from CI
 router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next) {
   const koa = this
+  const authToken = this.request.body.fields.token
+  if (authToken !== process.env.AUTH_TOKEN) {
+    this.status = 401
+    return this.body = {message: 'token invalid'}
+  }
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
   this.body = yield new Promise((resolve) => {
     const token = fs.readFileSync(`./token_${this.params.issueNumber}.txt`)
@@ -62,11 +67,11 @@ router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next)
       chromeWebstoreManager.publishItem(token, itemId).then(() => {
         resolve({message: 'success'})
       }).catch((err) => {
-        koa.response.status = 500
+        koa.status = 500
         resolve({message: 'failed to upload', error: err})
       })
     }).catch((err) => {
-      koa.response.status = 500
+      koa.status = 500
       resolve({message: 'failed to upload', error: err})
     })
   })

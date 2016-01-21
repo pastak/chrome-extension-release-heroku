@@ -14,3 +14,4 @@ TBD
   - Default: `production`
 - `GITHUB_TOKEN`: Your GitHub Token
 - `SECRET_HURR`: Secret for cookie sign
+- `AUTH_TOKEN`: Token for authorization with receive zip
