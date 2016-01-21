@@ -57,6 +57,10 @@ router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next)
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
   this.body = yield new Promise((resolve) => {
     redis.get(`token_${this.params.issueNumber}`, function (err, value) {
+      if (err) {
+        koa.response.status = 500
+        return resolve({message: 'error on get value from redis', error: err})
+      }
       chromeWebstoreManager.updateItem(value, extZipBinData, itemId)
       .then((data) => {
         chromeWebstoreManager.publishItem(value, itemId).then(() => {
