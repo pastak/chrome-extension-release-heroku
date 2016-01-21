@@ -4,7 +4,7 @@
   "website": "https://github.com/pastak/chrome-extension-release-heroku",
   "repository": "https://github.com/pastak/chrome-extension-release-heroku",
   "logo": "https://i.gyazo.com/276d637279b4a29da001a1be1509830c.png",
-  "success_url": "/",
+  "success_url": "/initialize",
   "env": {
     "ITEM_ID": {
       "description": "Chrome WebStore item id",
@@ -16,18 +16,6 @@
     },
     "WEBSTORE_CLIENT_SECRET": {
       "description": "Chrome WebStore OAuth Client Secret",
-      "required": true
-    },
-    "RELEASE_BRANCH": {
-      "description": "Your flow's release branch name",
-      "value": "production"
-    },
-    "GITHUB_TOKEN": {
-      "description": "Your GitHub Token",
-      "required": true
-    },
-    "SECRET_HURR": {
-      "description": "Secret for cookie sign",
       "required": true
     },
     "AUTH_TOKEN": {
