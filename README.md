@@ -1,4 +1,4 @@
-# github-webhook-chrome-extension-release
+# chrome-extension-release-heroku
 
 ## How To Setup
 
