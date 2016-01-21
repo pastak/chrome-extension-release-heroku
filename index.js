@@ -47,7 +47,7 @@ router.get('/callback', function *(next) {
   this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
     data = JSON.parse(data)
     fs.writeFileSync(`./token_${this.session.number}.txt`, data.access_token)
-    return 'Success to prepare your release. This item will be released as soon as merged.TOKEN is '+ data.access_token
+    return 'Success to prepare your release. This item will be released as soon as merged.TOKEN(' + this.session.number + ') is '+ data.access_token
   })
 })
 
