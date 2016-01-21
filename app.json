@@ -28,12 +28,10 @@
     },
     "SECRET_HURR": {
       "description": "Secret for cookie sign",
-      "generator": "secret",
       "required": true
     },
     "AUTH_TOKEN": {
       "description": "Token for authorization with receive zip",
-      "generator": "secret",
       "required": true
     }
   }
