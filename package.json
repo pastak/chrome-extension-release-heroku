@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "TBD",
   "scripts": {
-    "start": "node .",
+    "run_dev": "node .",
+    "start": "forever start node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,10 +19,9 @@
   "homepage": "https://github.com/pastak/github-webhook-chrome-extension-release#readme",
   "dependencies": {
     "chrome-webstore-manager": "^0.2.9",
-    "github": "^0.2.4",
+    "forever": "^0.15.1",
     "koa": "^1.1.2",
     "koa-body": "^1.4.0",
-    "koa-router": "^5.3.0",
-    "koa-session": "^3.3.1"
+    "koa-router": "^5.3.0"
   }
 }

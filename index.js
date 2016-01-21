@@ -2,39 +2,34 @@
 const fs = require('fs')
 const path = require('path')
 const app = require('koa')()
-app.keys = [process.env.SECRET_HURR]
 const router = require('koa-router')()
 const koaBody = require('koa-body')
-  const session = require('koa-session')
 const ChromeWebstoreManager = require('chrome-webstore-manager')
 const itemId = process.env.ITEM_ID
 const clientId = process.env.WEBSTORE_CLIENT_ID
 const clientSecret = process.env.WEBSTORE_CLIENT_SECRET
-const webhook = require('./libs/webhook')
 
 const chromeWebstoreManager = new ChromeWebstoreManager(clientId, clientSecret)
 
 router.get('/', function *(next) {
   this.type = 'text/html'
   this.body = `This app is receive webhook from github to release chrome webstore<br />
-  <a href='https://chrome.google.com/webstore/detail/${itemId}'>This item's webstore page</a>.
-  <br />
-  <br />
-  Webhook URL<input readonly='readonly' type='text' style='width: 800px' value='${this.request.origin}/webhook' onClick='this.select()'/>
-  `
+  <a href='https://chrome.google.com/webstore/detail/${itemId}'>This item's webstore page</a>.`
 })
 
-// Receive Webhook from GitHub
-router.post('/webhook', koaBody(), function *(next) {
-  if (this.headers['x-github-event'] !== 'pull_request') return this.body = ''
-  const reqJSON = this.request.body
-  this.body = webhook(reqJSON, this.request.origin)
+router.get('/initialize', function *(next) {
+  try {
+    fs.readFileSync('./token.json')
+    this.body = 'You have authorized. If you want to reset token please POST /delete_token'
+  } catch (e) {
+    const callbackUrl = `${this.request.origin}/callback`
+    this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl))
+  }
 })
 
-router.get('/prepare-release/:issueNumber', function *(next) {
-  const callbackUrl = `${this.request.origin}/callback`
-  this.session.number = this.params.issueNumber
-  this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl))
+router.post('/delete_token', function *() {
+  fs.unlink('./token.json')
+  this.response.redirect('/initialize')
 })
 
 router.get('/callback', function *(next) {
@@ -46,13 +41,14 @@ router.get('/callback', function *(next) {
   const callbackUrl = `${this.request.origin}/callback`
   this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
     data = JSON.parse(data)
-    fs.writeFileSync(`./token_${this.session.number}.txt`, data.access_token)
-    return 'Success to prepare your release. This item will be released as soon as merged.TOKEN(' + this.session.number + ') is '+ data.access_token
+    data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
+    fs.writeFileSync(`./token.json`, JSON.stringify(data))
+    return 'Success to save your token!'
   })
 })
 
 // Receive Zip from CI
-router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next) {
+router.post('/release', koaBody({multipart:true}), function *(next) {
   const koa = this
   const authToken = this.request.body.fields.token
   if (authToken !== process.env.AUTH_TOKEN) {
@@ -61,23 +57,37 @@ router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next)
   }
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
   this.body = yield new Promise((resolve) => {
-    const token = fs.readFileSync(`./token_${this.params.issueNumber}.txt`)
-    chromeWebstoreManager.updateItem(token, extZipBinData, itemId)
-    .then((data) => {
-      chromeWebstoreManager.publishItem(token, itemId).then(() => {
-        resolve({message: 'success'})
+    const tokenJSON = JSON.parse(fs.readFileSync('./token.json'))
+    let token = tokenJSON.access_token
+    const updateAndPublishItem = () => {
+      chromeWebstoreManager.updateItem(token, extZipBinData, itemId)
+      .then((data) => {
+        chromeWebstoreManager.publishItem(token, itemId).then(() => {
+          resolve({message: 'success'})
+        }).catch((err) => {
+          koa.status = 500
+          resolve({message: 'failed to publish', error: err})
+        })
       }).catch((err) => {
         koa.status = 500
         resolve({message: 'failed to upload', error: err})
       })
-    }).catch((err) => {
-      koa.status = 500
-      resolve({message: 'failed to upload', error: err})
-    })
+    }
+    if (tokenJSON.expired_at < Date.now()) {
+      chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
+        .then((data) => {
+          data = JSON.parse(data)
+          data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
+          const newTokenJson = Object.assign(tokenJSON, data)
+          token = newTokenJson.access_token
+          fs.writeFileSync(`./token.json`, JSON.stringify(newTokenJson))
+        }).then(updateAndPublishItem)
+    } else {
+      updateAndPublishItem()
+    }
   })
 })
 
-router.use(session(app))
 app.use(router.routes())
 const port = process.env.PORT || 3000
 app.listen(port, () => {
