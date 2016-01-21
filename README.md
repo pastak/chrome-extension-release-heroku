@@ -9,14 +9,6 @@
 - Set your CI config that it pushes extension zip file to `POST YOUR_HEROKU_APP_HOST/release`
   - sample setting is [here](https://github.com/pastak/chrome-extension-release-heroku#ci-sample-settings)
 
-### Usage
-
-- Make Pull Request to your release branch.
-- Access to URL (`YOUR_HEROKU_APP_HOST/prepare-release/PR_NUM`) on automate comment on your PR.
-- Authorize with Chrome WebStore item's owner account
-- Merge your PR.
-- (maybe automatic in CI) Post extension zip to `YOUR_HEROKU_APP_HOST/release/PR_ISSUE_NUMBER`
-
 ## Require Environment Values
 
 - `ITEM_ID`: Chrome WebStore item id
