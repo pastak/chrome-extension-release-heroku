@@ -6,7 +6,6 @@ app.keys = [process.env.SECRET_HURR]
 const router = require('koa-router')()
 const koaBody = require('koa-body')
 const session = require('koa-session')
-const redis = require('redis').createClient(process.env.REDIS_URL || 6379)
 const ChromeWebstoreManager = require('chrome-webstore-manager')
 const itemId = process.env.ITEM_ID
 const clientId = process.env.WEBSTORE_CLIENT_ID
@@ -47,7 +46,7 @@ router.get('/callback', function *(next) {
   const callbackUrl = `${this.request.origin}/callback`
   this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
     data = JSON.parse(data)
-    redis.set(`token_${this.session.number}`, data.access_token, require("redis").print)
+    fs.writeFileSync(`./token_${this.session.number}.txt`, data.access_token)
     return 'Success to prepare your release. This item will be released as soon as merged.TOKEN is '+ data.access_token
   })
 })
@@ -57,23 +56,18 @@ router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next)
   const koa = this
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
   this.body = yield new Promise((resolve) => {
-    redis.get(`token_${this.params.issueNumber}`, function (err, value) {
-      if (err) {
-        koa.response.status = 500
-        return resolve({message: 'error on get value from redis', error: err})
-      }
-      chromeWebstoreManager.updateItem(value, extZipBinData, itemId)
-      .then((data) => {
-        chromeWebstoreManager.publishItem(value, itemId).then(() => {
-          resolve({message: 'success'})
-        }).catch((err) => {
-          koa.response.status = 500
-          resolve({message: 'failed to upload', error: err})
-        })
+    const token = fs.readFileSync(`./token_${this.params.issueNumber}.txt`)
+    chromeWebstoreManager.updateItem(token, extZipBinData, itemId)
+    .then((data) => {
+      chromeWebstoreManager.publishItem(token, itemId).then(() => {
+        resolve({message: 'success'})
       }).catch((err) => {
         koa.response.status = 500
         resolve({message: 'failed to upload', error: err})
       })
+    }).catch((err) => {
+      koa.response.status = 500
+      resolve({message: 'failed to upload', error: err})
     })
   })
 })
