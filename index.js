@@ -5,7 +5,7 @@ const app = require('koa')()
 app.keys = [process.env.SECRET_HURR]
 const router = require('koa-router')()
 const koaBody = require('koa-body')
-const session = require('koa-session')
+  const session = require('koa-session')
 const ChromeWebstoreManager = require('chrome-webstore-manager')
 const itemId = process.env.ITEM_ID
 const clientId = process.env.WEBSTORE_CLIENT_ID
@@ -72,8 +72,8 @@ router.post('/release/:issueNumber', koaBody({multipart:true}), function *(next)
   })
 })
 
+router.use(session(app))
 app.use(router.routes())
-app.use(session(app))
 const port = process.env.PORT || 3000
 app.listen(port, () => {
   console.log(`listening on port ${port}`)
