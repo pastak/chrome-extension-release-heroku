@@ -1,0 +1,40 @@
+{
+  "name": "chrome-extension-release-heroku",
+  "description": "Support release for Chrome WebStore with GitHub webhook and CIs",
+  "website": "https://github.com/pastak/chrome-extension-release-heroku",
+  "repository": "https://github.com/pastak/chrome-extension-release-heroku",
+  "logo": "https://i.gyazo.com/276d637279b4a29da001a1be1509830c.png",
+  "success_url": "/",
+  "env": {
+    "ITEM_ID": {
+      "description": "Chrome WebStore item id",
+      "required": true
+    },
+    "WEBSTORE_CLIENT_ID": {
+      "description": "Chrome WebStore OAuth Client Id",
+      "required": true
+    },
+    "WEBSTORE_CLIENT_SECRET": {
+      "description": "Chrome WebStore OAuth Client Secret",
+      "required": true
+    },
+    "RELEASE_BRANCH": {
+      "description": "Your flow's release branch name",
+      "value": "production"
+    },
+    "GITHUB_TOKEN": {
+      "description": "Your GitHub Token",
+      "required": true
+    },
+    "SECRET_HURR": {
+      "description": "Secret for cookie sign",
+      "generator": "secret",
+      "required": true
+    },
+    "AUTH_TOKEN": {
+      "description": "Token for authorization with receive zip",
+      "generator": "secret",
+      "required": true
+    }
+  }
+}
