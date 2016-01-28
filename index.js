@@ -39,13 +39,12 @@ router.get('/', function *(next) {
 router.get('/initialize', function *(next) {
   const token = yield getToken()
   if (token) {
-    this.body = token
+    this.response.redirect('/')
   } else {
-    const callbackUrl = `${this.request.origin}/callback`
-    this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl))
+    const callbackUrl = `http://localhost:3000/callback`
+    this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl)+'&access_type=offline')
   }
 })
-
 router.post('/delete_token', function *() {
   try {
     yield delToken()
@@ -63,16 +62,18 @@ router.get('/callback', function *(next) {
     query[tmp[0]] = tmp[1]
   })
   const callbackUrl = `${this.request.origin}/callback`
-  this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
+  const tokenData = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
     data = JSON.parse(data)
     data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
-    try {
-      setToken(JSON.stringify(data))
-      return 'Success to save your token!'
-    } catch (e) {
-      return 'Failed'
-    }
+    return data
   })
+  try {
+    yield setToken(JSON.stringify(tokenData))
+    this.body = 'Success!'
+  } catch (e) {
+    this.status = 500
+    this.body = 'failed...'
+  }
 })
 
 // Receive Zip from CI
@@ -84,37 +85,35 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
     return this.body = {message: 'token invalid'}
   }
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
-  this.body = yield new Promise((resolve) => {
-    const tokenStr = yield getToken()
+  const tokenStr = yield getToken()
+  let token = yield (cb) => {
     const tokenJSON = JSON.parse(tokenStr)
-    let token = tokenJSON.access_token
-    const updateAndPublishItem = () => {
-      chromeWebstoreManager.updateItem(token, extZipBinData, itemId)
-      .then((data) => {
-        chromeWebstoreManager.publishItem(token, itemId).then(() => {
-          resolve({message: 'success'})
-        }).catch((err) => {
-          koa.status = 500
-          resolve({message: 'failed to publish', error: err})
-        })
+    if (false && tokenJSON.expired_at >= Date.now()) {
+      return tokenJSON.access_token
+    }
+    chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
+      .then(function (data) {
+        data = JSON.parse(data)
+        data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
+        const newTokenJson = Object.assign(tokenJSON, data)
+        cb(null, newTokenJson)
+      })
+  }
+  yield setToken(JSON.stringify(token))
+  this.body = yield (cb) => {
+    chromeWebstoreManager.updateItem(token.access_token, extZipBinData, itemId)
+    .then((data) => {
+      chromeWebstoreManager.publishItem(token.access_token, itemId).then(() => {
+        cb(null, {message: 'success'})
       }).catch((err) => {
         koa.status = 500
-        resolve({message: 'failed to upload', error: err})
+        cb(null, {message: 'failed to publish', error: err})
       })
-    }
-    if (tokenJSON.expired_at < Date.now()) {
-      chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
-        .then(function *(next, data) {
-          data = JSON.parse(data)
-          data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
-          const newTokenJson = Object.assign(tokenJSON, data)
-          token = newTokenJson.access_token
-          return yield setToken(JSON.stringify(newTokenJson))
-        }).then(updateAndPublishItem)
-    } else {
-      updateAndPublishItem()
-    }
-  })
+    }).catch((err) => {
+      koa.status = 500
+      cb(null, {message: 'failed to upload', error: err})
+    })
+  }
 })
 
 app.use(router.routes())
