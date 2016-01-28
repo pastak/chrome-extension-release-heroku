@@ -22,5 +22,8 @@
       "description": "Token for authorization with receive zip",
       "required": true
     }
-  }
+  },
+  "addons": [
+    "heroku-redis:hobby-dev"
+  ]
 }
