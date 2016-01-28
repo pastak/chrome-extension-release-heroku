@@ -5,11 +5,30 @@ const app = require('koa')()
 const router = require('koa-router')()
 const koaBody = require('koa-body')
 const ChromeWebstoreManager = require('chrome-webstore-manager')
+const redis = require('redis').createClient(process.env.REDIS_URL || 6379)
 const itemId = process.env.ITEM_ID
 const clientId = process.env.WEBSTORE_CLIENT_ID
 const clientSecret = process.env.WEBSTORE_CLIENT_SECRET
 
 const chromeWebstoreManager = new ChromeWebstoreManager(clientId, clientSecret)
+
+const getToken = () => {
+  return (callback) => {
+    redis.get('token', callback)
+  }
+}
+
+const setToken = (token) => {
+  return (callback) => {
+    redis.set('token', token, callback)
+  }
+}
+
+const delToken = () => {
+  return (callback) => {
+    redis.DEL('token', callback)
+  }
+}
 
 router.get('/', function *(next) {
   this.type = 'text/html'
@@ -18,18 +37,23 @@ router.get('/', function *(next) {
 })
 
 router.get('/initialize', function *(next) {
-  try {
-    fs.readFileSync('./token.json')
-    this.response.redirect('/')
-  } catch (e) {
+  const token = yield getToken()
+  if (token) {
+    this.body = token
+  } else {
     const callbackUrl = `${this.request.origin}/callback`
     this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl))
   }
 })
 
 router.post('/delete_token', function *() {
-  fs.unlink('./token.json')
-  this.response.redirect('/initialize')
+  try {
+    yield delToken()
+    this.response.redirect('/initialize')
+  } catch(e) {
+    this.status = 500
+    this.body = e
+  }
 })
 
 router.get('/callback', function *(next) {
@@ -42,7 +66,7 @@ router.get('/callback', function *(next) {
   this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
     data = JSON.parse(data)
     data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
-    fs.writeFileSync(`./token.json`, JSON.stringify(data))
+    yield setToken(JSON.stringify(data))
     return 'Success to save your token!'
   })
 })
@@ -57,7 +81,8 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
   }
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
   this.body = yield new Promise((resolve) => {
-    const tokenJSON = JSON.parse(fs.readFileSync('./token.json'))
+    const tokenStr = yield getToken()
+    const tokenJSON = JSON.parse(tokenStr)
     let token = tokenJSON.access_token
     const updateAndPublishItem = () => {
       chromeWebstoreManager.updateItem(token, extZipBinData, itemId)
@@ -80,7 +105,7 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
           data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
           const newTokenJson = Object.assign(tokenJSON, data)
           token = newTokenJson.access_token
-          fs.writeFileSync(`./token.json`, JSON.stringify(newTokenJson))
+          yield setToken(JSON.stringify(newTokenJson))
         }).then(updateAndPublishItem)
     } else {
       updateAndPublishItem()
