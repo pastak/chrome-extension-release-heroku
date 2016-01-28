@@ -1,6 +1,7 @@
 'use strict'
 const fs = require('fs')
 const path = require('path')
+const JSONStream = require('streaming-json-stringify')
 const app = require('koa')()
 const router = require('koa-router')()
 const koaBody = require('koa-body')
@@ -56,36 +57,45 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
     return this.body = {message: 'token invalid'}
   }
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
-  this.body = yield new Promise((resolve) => {
-    const tokenJSON = JSON.parse(fs.readFileSync('./token.json'))
-    let token = tokenJSON.access_token
-    const updateAndPublishItem = () => {
-      chromeWebstoreManager.updateItem(token, extZipBinData, itemId)
-      .then((data) => {
-        chromeWebstoreManager.publishItem(token, itemId).then(() => {
-          resolve({message: 'success'})
-        }).catch((err) => {
-          koa.status = 500
-          resolve({message: 'failed to publish', error: err})
-        })
+  let stream = this.body = JSONStream()
+  const tokenJSON = JSON.parse(fs.readFileSync('./token.json'))
+  let token = tokenJSON.access_token
+  const updateAndPublishItem = () => {
+    chromeWebstoreManager.updateItem(token, extZipBinData, itemId)
+    .then((data) => {
+      const timerId = setInterval(() => {
+        stream.write({message: 'uploading...'})
+      }, 15 * 1000)
+      chromeWebstoreManager.publishItem(token, itemId).then(() => {
+        clearInterval(timerId)
+        timerId = null
+        stream.write({message: 'success'})
+        stream.end()
       }).catch((err) => {
         koa.status = 500
-        resolve({message: 'failed to upload', error: err})
+        clearInterval(timerId)
+        timerId = null
+        stream.write({message: 'failed to publish', error: err})
+        stream.end()
       })
-    }
-    if (tokenJSON.expired_at < Date.now()) {
-      chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
-        .then((data) => {
-          data = JSON.parse(data)
-          data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
-          const newTokenJson = Object.assign(tokenJSON, data)
-          token = newTokenJson.access_token
-          fs.writeFileSync(`./token.json`, JSON.stringify(newTokenJson))
-        }).then(updateAndPublishItem)
-    } else {
-      updateAndPublishItem()
-    }
-  })
+    }).catch((err) => {
+      koa.status = 500
+      stream.write({message: 'failed to upload', error: err})
+      stream.end()
+    })
+  }
+  if (tokenJSON.expired_at < Date.now()) {
+    chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
+    .then((data) => {
+      data = JSON.parse(data)
+      data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
+      const newTokenJson = Object.assign(tokenJSON, data)
+      token = newTokenJson.access_token
+      fs.writeFileSync(`./token.json`, JSON.stringify(newTokenJson))
+    }).then(updateAndPublishItem)
+  } else {
+    updateAndPublishItem()
+  }
 })
 
 app.use(router.routes())
