@@ -41,7 +41,7 @@ router.get('/initialize', function *(next) {
   if (token) {
     this.response.redirect('/')
   } else {
-    const callbackUrl = `http://localhost:3000/callback`
+    const callbackUrl = `${this.request.origin}/callback`
     this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl)+'&access_type=offline')
   }
 })
