@@ -88,7 +88,7 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
   const tokenStr = yield getToken()
   let token = yield (cb) => {
     const tokenJSON = JSON.parse(tokenStr)
-    if (false && tokenJSON.expired_at >= Date.now()) {
+    if (tokenJSON.expired_at > Date.now()) {
       return tokenJSON.access_token
     }
     chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
