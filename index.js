@@ -63,11 +63,15 @@ router.get('/callback', function *(next) {
     query[tmp[0]] = tmp[1]
   })
   const callbackUrl = `${this.request.origin}/callback`
-  this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then(function *(next, data) {
+  this.body = yield chromeWebstoreManager.getAccessToken(query['code'], callbackUrl).then((data) => {
     data = JSON.parse(data)
     data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
-    yield setToken(JSON.stringify(data))
-    return 'Success to save your token!'
+    try {
+      setToken(JSON.stringify(data))
+      return 'Success to save your token!'
+    } catch (e) {
+      return 'Failed'
+    }
   })
 })
 
@@ -80,7 +84,7 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
     return this.body = {message: 'token invalid'}
   }
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
-  this.body = yield new Promise(function *(next, resolve) {
+  this.body = yield new Promise((resolve) => {
     const tokenStr = yield getToken()
     const tokenJSON = JSON.parse(tokenStr)
     let token = tokenJSON.access_token
@@ -105,7 +109,7 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
           data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
           const newTokenJson = Object.assign(tokenJSON, data)
           token = newTokenJson.access_token
-          yield setToken(JSON.stringify(newTokenJson))
+          return yield setToken(JSON.stringify(newTokenJson))
         }).then(updateAndPublishItem)
     } else {
       updateAndPublishItem()
