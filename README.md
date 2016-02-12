@@ -14,7 +14,7 @@
 - `ITEM_ID`: Chrome WebStore item id
 - `WEBSTORE_CLIENT_ID`: Chrome WebStore OAuth Client Id
 - `WEBSTORE_CLIENT_SECRET`: Chrome WebStore OAuth Client Secret
-  - Read more about these values: [pastak/chrome-webstore-manager](https://github.com/pastak/chrome-webstore-manager)
+  - Read more about these values: https://developer.chrome.com/webstore/using_webstore_api#beforeyoubegin
   - **Don't forget** add `YOUR_HEROKU_APP_HOST/callback` to Redirect URL
 - `AUTH_TOKEN`: Token for authorization with receive zip
 
