@@ -42,7 +42,7 @@ router.get('/initialize', function *(next) {
     this.response.redirect('/')
   } else {
     const callbackUrl = `${this.request.origin}/callback`
-    this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl)+'&access_type=offline')
+    this.response.redirect(chromeWebstoreManager.getCodeUrl(callbackUrl)+'&access_type=offline&approval_prompt=force')
   }
 })
 router.post('/delete_token', function *() {
