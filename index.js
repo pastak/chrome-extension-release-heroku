@@ -83,23 +83,22 @@ router.post('/return_only_token', koaBody({multipart:true}), function *(next) {
     return this.body = {message: 'token invalid'}
   }
   const tokenStr = yield getToken()
-  let token = yield (cb) => {
-    const tokenJSON = JSON.parse(tokenStr)
-    if (tokenJSON.expired_at > Date.now()) {
-      console.log('aaaa')
-      return tokenJSON.access_token
+  let token = ''
+  const tokenJSON = JSON.parse(tokenStr)
+  if (tokenJSON.expired_at > Date.now()) {
+    token = tokenJSON.access_token
+  } else {
+    token = yield (cb) => {
+      chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
+        .then(function (data) {
+          data = JSON.parse(data)
+          data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
+          const newTokenJson = Object.assign(tokenJSON, data)
+          yield setToken(JSON.stringify(newTokenJson))
+          cb(null, newTokenJson)
+        })
     }
-    console.log('fresh token')
-    chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
-      .then(function (data) {
-        data = JSON.parse(data)
-        console.log()
-        data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
-        const newTokenJson = Object.assign(tokenJSON, data)
-        cb(null, newTokenJson)
-      })
   }
-  yield setToken(JSON.stringify(token))
   this.body = {token: token}
 })
 
@@ -113,20 +112,22 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
   }
   const extZipBinData = fs.readFileSync(this.request.body.files.file.path)
   const tokenStr = yield getToken()
-  let token = yield (cb) => {
-    const tokenJSON = JSON.parse(tokenStr)
-    if (tokenJSON.expired_at > Date.now()) {
-      return tokenJSON.access_token
+  const tokenJSON = JSON.parse(tokenStr)
+  let token = ''
+  if (tokenJSON.expired_at > Date.now()) {
+    token = tokenJSON.access_token
+  } else {
+    token = yield (cb) => {
+      chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
+        .then(function (data) {
+          data = JSON.parse(data)
+          data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
+          const newTokenJson = Object.assign(tokenJSON, data)
+          yield setToken(JSON.stringify(newTokenJson))
+          cb(null, newTokenJson)
+        })
     }
-    chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
-      .then(function (data) {
-        data = JSON.parse(data)
-        data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
-        const newTokenJson = Object.assign(tokenJSON, data)
-        cb(null, newTokenJson)
-      })
   }
-  yield setToken(JSON.stringify(token))
   this.body = yield (cb) => {
     chromeWebstoreManager.updateItem(token.access_token, extZipBinData, itemId)
     .then((data) => {
