@@ -114,21 +114,27 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
   const tokenStr = yield getToken()
   const tokenJSON = JSON.parse(tokenStr)
   let token = ''
+  console.log('aaaaa')
   if (tokenJSON.expired_at > Date.now()) {
+    console.log('bbbbb')
     token = tokenJSON.access_token
   } else {
+    console.log('ccccc')
     token = yield (cb) => {
       chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
         .then(function *(data) {
+          console.log('dddddd')
           data = JSON.parse(data)
           data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
           const newTokenJson = Object.assign(tokenJSON, data)
           yield setToken(JSON.stringify(newTokenJson))
+          console.log('eeeeee')
           cb(null, newTokenJson)
         })
     }
   }
   this.body = yield (cb) => {
+    console.log('ffffff')
     chromeWebstoreManager.updateItem(token.access_token, extZipBinData, itemId)
     .then((data) => {
       chromeWebstoreManager.publishItem(token.access_token, itemId).then(() => {
