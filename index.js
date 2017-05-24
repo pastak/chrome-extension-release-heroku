@@ -97,7 +97,7 @@ router.post('/return_only_token', koaBody({multipart:true}), function *(next) {
       })
   }
   yield setToken(JSON.stringify(token))
-  cb(null, {token: token})
+  this.body = {token: token}
 })
 
 // Receive Zip from CI
