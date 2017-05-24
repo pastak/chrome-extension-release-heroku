@@ -76,7 +76,7 @@ router.get('/callback', function *(next) {
   }
 })
 
-router.post('/return_only_token', function *(next) {
+router.post('/return_only_token', koaBody({multipart:true}), function *(next) {
   const authToken = this.request.body.fields.token
   if (authToken !== process.env.AUTH_TOKEN) {
     this.status = 401
