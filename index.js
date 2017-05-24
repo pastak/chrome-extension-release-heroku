@@ -85,13 +85,15 @@ router.post('/return_only_token', koaBody({multipart:true}), function *(next) {
   const tokenStr = yield getToken()
   let token = yield (cb) => {
     const tokenJSON = JSON.parse(tokenStr)
-    console.log(tokenJSON)
     if (tokenJSON.expired_at > Date.now()) {
+      console.log('aaaa')
       return tokenJSON.access_token
     }
+    console.log('fresh token')
     chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
       .then(function (data) {
         data = JSON.parse(data)
+        console.log()
         data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
         const newTokenJson = Object.assign(tokenJSON, data)
         cb(null, newTokenJson)
