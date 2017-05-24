@@ -90,7 +90,7 @@ router.post('/return_only_token', koaBody({multipart:true}), function *(next) {
   } else {
     token = yield (cb) => {
       chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
-        .then(function (data) {
+        .then(function *(data) {
           data = JSON.parse(data)
           data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
           const newTokenJson = Object.assign(tokenJSON, data)
@@ -119,7 +119,7 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
   } else {
     token = yield (cb) => {
       chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
-        .then(function (data) {
+        .then(function *(data) {
           data = JSON.parse(data)
           data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
           const newTokenJson = Object.assign(tokenJSON, data)
