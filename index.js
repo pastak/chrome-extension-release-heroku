@@ -112,6 +112,7 @@ router.post('/release', koaBody({multipart:true}), function *(next) {
   const tokenStr = yield getToken()
   let token = yield (cb) => {
     const tokenJSON = JSON.parse(tokenStr)
+    console.log(tokenJSON)
     if (tokenJSON.expired_at > Date.now()) {
       return tokenJSON.access_token
     }
