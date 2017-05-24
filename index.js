@@ -76,6 +76,30 @@ router.get('/callback', function *(next) {
   }
 })
 
+router.post('/return_only_token', function *(next) {
+  const authToken = this.request.body.fields.token
+  if (authToken !== process.env.AUTH_TOKEN) {
+    this.status = 401
+    return this.body = {message: 'token invalid'}
+  }
+  const tokenStr = yield getToken()
+  let token = yield (cb) => {
+    const tokenJSON = JSON.parse(tokenStr)
+    if (tokenJSON.expired_at > Date.now()) {
+      return tokenJSON.access_token
+    }
+    chromeWebstoreManager.getRefreshToken(tokenJSON.refresh_token)
+      .then(function (data) {
+        data = JSON.parse(data)
+        data.expired_at = Date.now() + (Number(data.expires_in) * 1000)
+        const newTokenJson = Object.assign(tokenJSON, data)
+        cb(null, newTokenJson)
+      })
+  }
+  yield setToken(JSON.stringify(token))
+  cb(null, {token: token})
+})
+
 // Receive Zip from CI
 router.post('/release', koaBody({multipart:true}), function *(next) {
   const koa = this
